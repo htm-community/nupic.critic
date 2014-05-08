@@ -40,7 +40,7 @@ def run(input_file, audio_file=None):
     for row_index, row_value in enumerate(row):
       for header_index, hdr in enumerate(headers):
         if not hdr == "anomalyScore" \
-          and not hdr in ["b0", "b1", "b2", "b4", "b5", "b7", "b8"] \
+          and not hdr in ["b0", "b1", "b7", "b8"] \
           and row_index == header_index:
           data[hdr].append(row_value)
           plots[hdr], = plt.plot(data[hdr])
@@ -51,16 +51,18 @@ def run(input_file, audio_file=None):
     plt.draw()
     plt.tight_layout()
 
-    start = time.time()
     
     if audio_file:
       subprocess.call("open %s" % audio_file, shell=True)
+      time.sleep(1.0)
+
+    start = time.time()
 
     for row in reader:
       data_time = start + float(row[headers.index("seconds")])
       for row_index, row_value in enumerate(row):
         for header_index, hdr in enumerate(headers):
-          if not hdr in ["b0", "b1", "b2", "b4", "b5", "b7", "b8"] \
+          if not hdr in ["b0", "b1", "b7", "b8"] \
             and row_index == header_index:
             data[hdr].append(row_value)
             plot = plots[hdr]

@@ -9,15 +9,16 @@ from pydub import AudioSegment
 
 
 DATA_DIR = "data"
+BUCKETS = 10
+ISOLATE = "b3"
 
 
 def writeCsv(data, out_name):
   print "Writing data to %s" % out_name
   with open(out_name, "wb") as out_file:
     writer = csv.writer(out_file)
-    headers = ["seconds"]
-    headers = headers + [("b%i" % i) for i in xrange(len(data[0]) - 1)]
-    types = ["float" for i in xrange(len(data[0]))]
+    headers = ["seconds"] + [("b%i" % i) for i in xrange(len(data[0]) - 1)]
+    types = ["float"] + ["int" for i in xrange(len(data[0]) - 1)]
     flags = ["" for i in xrange(len(data[0]))]
     writer.writerow(headers)
     writer.writerow(types)
@@ -79,12 +80,13 @@ def generate_data(input_path, plot):
   print "Samples per second: %f" % (len(flipped) / audio_duration)
 
   grouped = []
-  for i, one in enumerate(flipped):
-      # one = flipped[i]
+  for i, sample in enumerate(flipped):
       perc_done = float(i+1) / len(flipped)
       elapsed_seconds = (perc_done * audio_duration)
-      histogram = np.array(np.histogram(one, range=(freq_min, freq_max))[0], dtype="float64")
-      histogram = np.insert(histogram, 0, elapsed_seconds)
+      histogram = np.array(np.histogram(
+        sample, bins=BUCKETS)[0]
+      ).tolist()
+      histogram = [elapsed_seconds] + histogram
       grouped.append(histogram)
 
   writeCsv(grouped, "%s_input.csv" % (os.path.join(DATA_DIR, name)))

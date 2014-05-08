@@ -32,11 +32,12 @@ import nupic_output
 
 
 MODEL_PARAMS_DIR = "./model_params"
+PREDICTED_BUCKET = "b3"
 
 
 def createModel(modelParams):
   model = ModelFactory.create(modelParams)
-  model.enableInference({"predictedField": "b3"})
+  model.enableInference({"predictedField": PREDICTED_BUCKET})
   return model
 
 
@@ -55,15 +56,19 @@ def getModelParamsFromName(modelName):
 
 
 
-def runIoThroughNupic(inputPath, model, modelName):
+def runIoThroughNupic(inputPath, model, modelName, plot=False):
   with open(inputPath, "rb") as inputFile:
     csvReader = csv.reader(inputFile)
     # skip header rows
     headers = csvReader.next()
     csvReader.next()
     csvReader.next()
+    shifter = InferenceShifter()
 
-    output = nupic_output.NuPICFileOutput(modelName, path="data")
+    if plot:
+      output = nupic_output.NuPICPlotOutput(modelName)
+    else:
+      output = nupic_output.NuPICFileOutput(modelName, path="data")
 
     counter = 0
     for row in csvReader:
@@ -71,27 +76,37 @@ def runIoThroughNupic(inputPath, model, modelName):
       counter += 1
       if (counter % 100 == 0):
         print "Read %i lines..." % counter
+      row = [float(row[0])] + [int(val) for val in row[1:]]
       input_row = dict(zip(headers, row))
       result = model.run(input_row)
 
-      output.write(input_row, result)
+      if plot:
+        seconds = input_row["seconds"]
+        actual = input_row[PREDICTED_BUCKET]
+        shifter.shift(result)
+        predicted = result.inferences["multiStepBestPredictions"][1]
+        output.write([seconds], [actual], [predicted])
+      else:
+        output.write(input_row, result)
 
     output.close()
 
 
 
-def runModel(input_path):
+def runModel(input_path, plot):
   print "Creating model from %s..." % input_path
   modelName = os.path.splitext(os.path.basename(input_path))[0]
   outputName = modelName.split('_')[0]
-  model = createModel(getModelParamsFromName("audio"))
-  inputData = input_path
-  runIoThroughNupic(inputData, model, "%s_output" % outputName)
+  modelParams = getModelParamsFromName(modelName)
+  model = createModel(modelParams)
+  runIoThroughNupic(input_path, model, "%s_output" % outputName, plot)
 
 
 
 if __name__ == "__main__":
-  plot = False
   args = sys.argv[1:]
   input_path = args[0]
-  runModel(input_path)
+  plot = False
+  if "--plot" in args:
+    plot = True
+  runModel(input_path, plot)

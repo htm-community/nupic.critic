@@ -23,6 +23,7 @@
 Groups together the code dealing with swarming.
 (This is a component of the One Hot Gym Prediction Tutorial.)
 """
+import sys
 import os
 import pprint
 
@@ -30,7 +31,7 @@ from nupic.swarming import permutations_runner
 from swarm_description import SWARM_DESCRIPTION
 
 INPUT_FILE = "reich_input.csv"
-
+BUCKETS = 6
 
 
 def modelParamsToString(modelParams):
@@ -53,7 +54,7 @@ def writeModelParamsToFile(modelParams, name):
 
 
 
-def swarmForBestModelParams(swarmConfig, name, maxWorkers=4):
+def swarmForBestModelParams(swarmConfig, name, maxWorkers=8):
   outputLabel = name
   permWorkDir = os.path.abspath('swarm')
   if not os.path.exists(permWorkDir):
@@ -81,14 +82,18 @@ def printSwarmSizeWarning(size):
 
 
 
-def getSwarmDescription():
-  for i in xrange(10):
+def getSwarmDescription(name, filePath, numBuckets=BUCKETS):
+  for i in xrange(numBuckets):
     SWARM_DESCRIPTION["includedFields"].append({
       "fieldName": "b%i" % i,
       "fieldType": "float",
       "maxValue": 6000.0,
       "minValue": 0.0
     })
+  SWARM_DESCRIPTION["streamDef"]["info"] = name
+  stream = SWARM_DESCRIPTION["streamDef"]["streams"][0]
+  stream["info"] = name
+  stream["source"] = "file://%s" % os.path.abspath(filePath)
   return SWARM_DESCRIPTION
 
 
@@ -99,7 +104,7 @@ def swarm(filePath):
   print "= Swarming on %s data..." % name
   printSwarmSizeWarning(SWARM_DESCRIPTION["swarmSize"])
   print "================================================="
-  swarmDescription = getSwarmDescription()
+  swarmDescription = getSwarmDescription(name, filePath)
   modelParams = swarmForBestModelParams(swarmDescription, name)
   print "\nWrote the following model param files:"
   print "\t%s" % modelParams
@@ -107,4 +112,6 @@ def swarm(filePath):
 
 
 if __name__ == "__main__":
-  swarm(INPUT_FILE)
+  args = sys.argv[1:]
+  input_path = args[0]
+  swarm(input_path)
