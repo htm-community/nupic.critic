@@ -6,8 +6,8 @@
     <img src="https://github.com/numenta/nupic/wiki/images/icons/warning.png"/>
   </td>
   <td>
-    <h3>This DEMO doesn't really work yet</h3>
-    <p>I created it at the 2014 NuPIC Spring Hackathon, but didn't get it working properly. I'll find some time to work on this, but for now I'm pushing to Github in case others want to see it and try to fix it.</p>
+    <h3>This DEMO sortof works</h3>
+    <p>I created it at the 2014 NuPIC Spring Hackathon, but didn't get it working properly. I figured out what the problem was and updated the code so that data is input into NuPIC properly, but the results are less than impressive. Currently experimenting with different ways to process audio wav data so that NuPIC understands it better.</p>
   </td>
 </tr>
 </table>
@@ -28,12 +28,12 @@ Use the input file created by `generate_data.py`. This swarm will take quite a l
 
 ### Running the data through NuPIC
 
-    ./run.py path/to/input_data.csv
+    ./run.py path/to/input_data.csv [--plot]
 
-This will create a NuPIC model with the model params created by the previous swarm and feed the input data specified into it. Use the input file created by `generate_data.py`.
+This will create a NuPIC model with the model params created by the previous swarm and feed the input data specified into it. Use the input file created by `generate_data.py`. If the `--plot` option is specified, will plot the actual and predicted values for the specified frequency bucket instead of writing output data. This is useful for debugging. 
 
 ### Plotting the results
 
     ./plotter.py path/to/output_data.csv [path/to/audio.wav]
 
-Use the output file created by `run.py`. If the path to an wav file is given, will attempt to open the wave file and play it synced with the plot. 
+Use the output file created by `run.py`. If the path to an wav file is given, will attempt to open the wave file with system `open` command and play it synced with the plot. 
