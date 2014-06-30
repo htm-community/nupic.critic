@@ -27,6 +27,7 @@ import os
 import csv
 from collections import deque
 from abc import ABCMeta, abstractmethod
+from nupic.algorithms import anomaly_likelihood
 # Try to import matplotlib, but we don't have to.
 try:
   import matplotlib
@@ -77,15 +78,27 @@ class NuPICFileOutput(NuPICOutput):
     self.outputFile = open(outputFilePath, "w")
     self.outputWriter = csv.writer(self.outputFile)
     self._headerWritten = False
+    self.anomalyLikelihoodHelper = anomaly_likelihood.AnomalyLikelihood()
 
 
 
   def write(self, row, result):
     row["anomalyScore"] = result.inferences["anomalyScore"]
     if not self._headerWritten:
-      self.outputWriter.writerow(row.keys())
+      keys = row.keys()
+      keys.append("predicted")
+      keys.append("anomalyLikelihood")
+      self.outputWriter.writerow(keys)
       self._headerWritten = True
-    self.outputWriter.writerow(row.values())
+    predicted = result.inferences["multiStepBestPredictions"][1]
+    value = row["b3"]
+    anomalyLikelihood = self.anomalyLikelihoodHelper.anomalyProbability(
+      value, row["anomalyScore"], row["seconds"]
+    )
+    rows = row.values()
+    rows.append(predicted)
+    rows.append(anomalyLikelihood)
+    self.outputWriter.writerow(rows)
     self.lineCount += 1
 
 

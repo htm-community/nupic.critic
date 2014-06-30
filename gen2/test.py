@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as N
 import wave
 
@@ -15,7 +17,7 @@ class SoundFile:
 # let's prepare signal
 duration = 4 # seconds
 samplerate = 44100 # Hz
-samples = duration*samplerate
+samples = duration * samplerate
 frequency = 340 # Hz
 period = samplerate / float(frequency) # in sample points
 omega = N.pi * 2 / period
@@ -29,7 +31,7 @@ signal = N.resize(ydata, (samples,))
 print signal
 ssignal = ''
 for i in range(len(signal)):
-   ssignal += wave.struct.pack('h',signal[i]) # transform to binary
+   ssignal += wave.struct.pack('h', signal[i]) # transform to binary
 
 f = SoundFile(ssignal)
 f.write()

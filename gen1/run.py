@@ -22,7 +22,6 @@
 import os
 import sys
 import csv
-import datetime
 import importlib
 
 from nupic.data.inference_shifter import InferenceShifter
