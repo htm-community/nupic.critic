@@ -41,8 +41,8 @@ SWARM_DESCRIPTION = {
     "predictionSteps": [
       1
     ],
-    "predictedField": "b3"
+    "predictedField": ""
   },
-  "iterationCount": -1,
+  "iterationCount": 2000,
   "swarmSize": "medium"
 }

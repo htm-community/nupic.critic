@@ -31,7 +31,7 @@ import nupic_output
 
 
 MODEL_PARAMS_DIR = "./model_params"
-PREDICTED_BUCKET = "b3"
+PREDICTED_BUCKET = "b0"
 
 
 def createModel(modelParams):

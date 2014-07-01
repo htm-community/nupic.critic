@@ -31,7 +31,7 @@ from nupic.swarming import permutations_runner
 from swarm_description import SWARM_DESCRIPTION
 
 INPUT_FILE = "reich_input.csv"
-BUCKETS = 6
+BUCKETS = 4
 
 
 def modelParamsToString(modelParams):
@@ -54,7 +54,7 @@ def writeModelParamsToFile(modelParams, name):
 
 
 
-def swarmForBestModelParams(swarmConfig, name, maxWorkers=8):
+def swarmForBestModelParams(swarmConfig, name, maxWorkers=6):
   outputLabel = name
   permWorkDir = os.path.abspath('swarm')
   if not os.path.exists(permWorkDir):
@@ -82,7 +82,7 @@ def printSwarmSizeWarning(size):
 
 
 
-def getSwarmDescription(name, filePath, numBuckets=BUCKETS):
+def getSwarmDescription(name, filePath, predictedField, numBuckets=BUCKETS):
   for i in xrange(numBuckets):
     SWARM_DESCRIPTION["includedFields"].append({
       "fieldName": "b%i" % i,
@@ -94,17 +94,19 @@ def getSwarmDescription(name, filePath, numBuckets=BUCKETS):
   stream = SWARM_DESCRIPTION["streamDef"]["streams"][0]
   stream["info"] = name
   stream["source"] = "file://%s" % os.path.abspath(filePath)
+  SWARM_DESCRIPTION["inferenceArgs"]["predictedField"] = predictedField
+  print SWARM_DESCRIPTION
   return SWARM_DESCRIPTION
 
 
 
-def swarm(filePath):
-  name = os.path.splitext(os.path.basename(filePath))[0]
+def swarm(filePath, predictedField):
+  name = os.path.splitext(os.path.basename(filePath))[0] + "_" + predictedField
   print "================================================="
   print "= Swarming on %s data..." % name
   printSwarmSizeWarning(SWARM_DESCRIPTION["swarmSize"])
   print "================================================="
-  swarmDescription = getSwarmDescription(name, filePath)
+  swarmDescription = getSwarmDescription(name, filePath, predictedField)
   modelParams = swarmForBestModelParams(swarmDescription, name)
   print "\nWrote the following model param files:"
   print "\t%s" % modelParams
@@ -114,4 +116,5 @@ def swarm(filePath):
 if __name__ == "__main__":
   args = sys.argv[1:]
   input_path = args[0]
-  swarm(input_path)
+  predictedField = args[1]
+  swarm(input_path, predictedField)

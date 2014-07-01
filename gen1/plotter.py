@@ -15,7 +15,7 @@ try:
 except ImportError:
   pass
 
-WINDOW = 100
+WINDOW = 200
 
 
 def run(input_file, audio_file=None):
@@ -26,12 +26,13 @@ def run(input_file, audio_file=None):
     reader.next()
     reader.next()
     plt.ion()
-    fig = plt.figure(figsize=(20, 16))
+    fig = plt.figure(figsize=(20, 10))
     gs = gridspec.GridSpec(2, 1)
     value_plot = fig.add_subplot(gs[0, 0])
 
     data = {}
     plots = {}
+    legend = []
     for header in headers:
       data[header] = deque([0.0] * WINDOW, maxlen=WINDOW)
 
@@ -40,30 +41,33 @@ def run(input_file, audio_file=None):
     for row_index, row_value in enumerate(row):
       for header_index, hdr in enumerate(headers):
 
-        # Looks only at the predicted field, plotting actual and predicted
-        if hdr in ["b3", "predicted"] and row_index == header_index:
-          data[hdr].append(row_value)
-          plots[hdr], = plt.plot(data[hdr])
-
-        # # Plots major input data, but not predictions
-        # if not hdr == "anomalyScore" \
-        #   and not hdr in ["b0", "b1", "b7", "b8"] \
-        #   and row_index == header_index:
+        # # Looks only at the predicted field, plotting actual and predicted
+        # if hdr in ["b3", "predicted"] and row_index == header_index:
         #   data[hdr].append(row_value)
         #   plots[hdr], = plt.plot(data[hdr])
-    
+
+        # Plots major input data, but not predictions
+        if hdr.startswith("b") \
+            and row_index == header_index:
+          data[hdr].append(row_value)
+          plots[hdr], = plt.plot(data[hdr])
+          legend.append(hdr)
+
+      plt.legend(legend, loc=3)
+
     anomaly_plot = fig.add_subplot(gs[1, 0])
     anomaly_plot.set_ylim([-0.2, 1.2])
     plots["anomalyScore"], = plt.plot(data["anomalyScore"], 'y')
     plots["anomalyLikelihood"], = plt.plot(data["anomalyLikelihood"], 'r')
 
+    plt.legend(["anomalyScore", "anomalyLikelihood"], loc=3)
     plt.draw()
     plt.tight_layout()
 
     
     if audio_file:
       subprocess.call("open %s" % audio_file, shell=True)
-      time.sleep(0.4)
+      time.sleep(0.5)
 
     start = time.time()
     max_y_value = 0.0
@@ -73,32 +77,36 @@ def run(input_file, audio_file=None):
       for row_index, row_value in enumerate(row):
         for header_index, hdr in enumerate(headers):
 
-          # Looks only at the predicted field, plotting actual and predicted
-          if hdr in ["b3", "predicted", "seconds", "anomalyScore", "anomalyLikelihood"] \
-                  and row_index == header_index:
+          # # Looks only at the predicted field, plotting actual and predicted
+          # if hdr in ["b3", "predicted", "seconds", "anomalyScore", "anomalyLikelihood"] \
+          #         and row_index == header_index:
+          #   data[hdr].append(row_value)
+          #
+          #   if hdr in ["b3", "predicted"]:
+          #     if float(row_value) > max_y_value:
+          #       max_y_value = float(row_value)
+          #
+          #   if not hdr == "seconds":
+          #     plot = plots[hdr]
+          #     plot.set_xdata(data["seconds"])
+          #     plot.set_ydata(data[hdr])
+          #     value_plot.set_ylim([0, max_y_value])
+
+
+          # Plots major input data, but not predictions
+          if hdr == "seconds" and row_index == header_index:
             data[hdr].append(row_value)
 
-            if hdr in ["b3", "predicted"]:
-              if float(row_value) > max_y_value:
-                max_y_value = float(row_value)
+          elif (hdr.startswith("b") or hdr in ["anomalyScore", "anomalyLikelihood"]) \
+            and row_index == header_index:
+            data[hdr].append(row_value)
+            if float(row_value) > max_y_value:
+              max_y_value = float(row_value)
+            plot = plots[hdr]
+            plot.set_xdata(data["seconds"])
+            plot.set_ydata(data[hdr])
+            value_plot.set_ylim([0, max_y_value])
 
-            if not hdr == "seconds":
-              plot = plots[hdr]
-              plot.set_xdata(data["seconds"])
-              plot.set_ydata(data[hdr])
-              value_plot.set_ylim([0, max_y_value])
-
-
-          # # Plots major input data, but not predictions
-          # if not hdr in ["b0", "b1", "b7", "b8"] \
-          #   and row_index == header_index:
-          #   data[hdr].append(row_value)
-          #   plot = plots[hdr]
-          #   plot.set_xdata(data["seconds"])
-          #   plot.set_ydata(data[hdr])
-          #   if hdr == "anomalyScore":
-          #     plt.ylim(-0.2, 1.2)
-      
       value_plot.relim()
       value_plot.autoscale_view(True, True, True)
       anomaly_plot.relim()

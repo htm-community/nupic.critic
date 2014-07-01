@@ -10,8 +10,7 @@ import wave
 
 
 DATA_DIR = "data"
-BUCKETS = 10
-ISOLATE = "b3"
+BUCKETS = 4
 
 
 def writeCsv(data, out_name):
@@ -69,9 +68,8 @@ def generate_data(input_path, plot):
 
   sample_width, frame_rate, signal_length, seconds, signal = process_wave(input_path)
 
-  window_size = 4096 * 4
+  window_size = 4096 * 8
   overlap_ratio = 0.5
-  amp_min = 10
 
   # FFT the signal and extract frequency components
   arr2D = mlab.specgram(
@@ -94,9 +92,6 @@ def generate_data(input_path, plot):
     plt.colorbar(orientation='vertical')
     plt.show()
     exit()
-
-  freq_min = np.amin(arr2D)
-  freq_max = np.amax(arr2D)
 
   flipped = np.transpose(arr2D)
 
