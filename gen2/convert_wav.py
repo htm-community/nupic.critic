@@ -28,13 +28,13 @@ parser.add_option(
 parser.add_option(
     "-s",
     "--sample_rate",
-    dest="sampleRate",
+    dest="sample_rate",
     default=DEFAULT_SAMPLE_RATE,
     help="How many samples to take per second.")
 parser.add_option(
     "-o",
     "--output_directory",
-    dest="outputDir",
+    dest="output_dir",
     default=DEFAULT_OUTPUT_DIR,
     help="Directory to write the NuPIC input file.")
 parser.add_option(
@@ -130,7 +130,7 @@ def writeCsv(data, out_path):
 
 
 
-def run(buckets, sample_rate, wav_path, outputDir):
+def run(buckets, sample_rate, wav_path, output_dir):
   sample_width, frame_rate, signal_length, seconds, signal \
     = read_wav_data(wav_path)
   histogram = get_fft_histogram(
@@ -138,9 +138,9 @@ def run(buckets, sample_rate, wav_path, outputDir):
   )
   wav_in_name = os.path.splitext(os.path.basename(wav_path))[0]
   output_name = "%s_%ihz_%ib_input.csv" % (wav_in_name, sample_rate, buckets)
-  if not os.path.exists(outputDir):
-    os.makedirs(outputDir)
-  writeCsv(histogram, os.path.join(outputDir, output_name))
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+  writeCsv(histogram, os.path.join(output_dir, output_name))
 
 
 if __name__ == "__main__":
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
   run(
     int(options.buckets),
-    int(options.sampleRate),
+    int(options.sample_rate),
     wav_path,
-    options.outputDir
+    options.output_dir
   )
