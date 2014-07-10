@@ -19,24 +19,24 @@ parser = OptionParser(
 )
 
 parser.add_option(
-    "-b",
-    "--buckets",
-    dest="buckets",
-    default=DEFAULT_BUCKETS,
-    help="Number of frequency buckets to split the input when applying the "
-         "FFT.")
+  "-b",
+  "--buckets",
+  dest="buckets",
+  default=DEFAULT_BUCKETS,
+  help="Number of frequency buckets to split the input when applying the "
+       "FFT.")
 parser.add_option(
-    "-s",
-    "--sample_rate",
-    dest="sample_rate",
-    default=DEFAULT_SAMPLE_RATE,
-    help="How many samples to take per second.")
+  "-s",
+  "--sample_rate",
+  dest="sample_rate",
+  default=DEFAULT_SAMPLE_RATE,
+  help="How many samples to take per second.")
 parser.add_option(
-    "-o",
-    "--output_directory",
-    dest="output_dir",
-    default=DEFAULT_OUTPUT_DIR,
-    help="Directory to write the NuPIC input file.")
+  "-o",
+  "--output_directory",
+  dest="output_dir",
+  default=DEFAULT_OUTPUT_DIR,
+  help="Directory to write the NuPIC input file.")
 parser.add_option(
   "-v",
   "--verbose",
@@ -83,15 +83,20 @@ def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets):
   overlap_ratio = 0.0
 
   # FFT the signal and extract frequency components
-  arr2D = mlab.specgram(
+  specgram = mlab.specgram(
     signal,
     NFFT=window_size,
-    Fs=frame_rate,
+    Fs=buckets,
     window=mlab.window_hanning,
-    noverlap=int(window_size * overlap_ratio))[0]
+    noverlap=int(window_size * overlap_ratio))
+
+  periodogram = specgram[0]
+
+  if verbose:
+    print "Dimensions of periodogram: %i x %i" % (len(periodogram), len(periodogram[0]))
 
   # apply log transform since specgram() returns linear array
-  arr2D = 10 * np.log10(arr2D)
+  arr2D = 10 * np.log10(periodogram)
   arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
   flipped = np.transpose(arr2D)
@@ -115,32 +120,39 @@ def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets):
 
 
 
-def writeCsv(data, out_path):
-  with open(out_path, "wb") as out_file:
-    writer = csv.writer(out_file)
-    headers = ["seconds"] + [("b%i" % i) for i in xrange(len(data[0]) - 1)]
-    types = ["float"] + ["int" for i in xrange(len(data[0]) - 1)]
-    flags = ["" for i in xrange(len(data[0]))]
-    writer.writerow(headers)
-    writer.writerow(types)
-    writer.writerow(flags)
-    for line in data:
-      writer.writerow(line)
+def writeCsvs(data, out_path):
+  if not os.path.exists(out_path):
+    os.makedirs(out_path)
+  bins = [("b%i" % i) for i in xrange(len(data[0]) - 1)]
+  for bin in bins:
+    output_file_name = os.path.join(out_path, "%s.csv" % bin)
+    with open(output_file_name, "wb") as out_file:
+      writer = csv.writer(out_file)
+      headers = ["seconds", bin]
+      types = ["float", "int"]
+      flags = ["",""]
+      writer.writerow(headers)
+      writer.writerow(types)
+      writer.writerow(flags)
+      for line in data:
+        writer.writerow([line[0], line[1 + bins.index(bin)]])
+
   print "Wrote data to %s" % out_path
 
 
 
-def run(buckets, sample_rate, wav_path, output_dir):
+def run(buckets, sample_rate, wav_path, data_dir):
   sample_width, frame_rate, signal_length, seconds, signal \
     = read_wav_data(wav_path)
   histogram = get_fft_histogram(
     signal, frame_rate, seconds, sample_rate, buckets
   )
   wav_in_name = os.path.splitext(os.path.basename(wav_path))[0]
-  output_name = "%s_%ihz_%ib_input.csv" % (wav_in_name, sample_rate, buckets)
-  if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-  writeCsv(histogram, os.path.join(output_dir, output_name))
+  output_name = "%s_%ihz_%ib" % (wav_in_name, sample_rate, buckets)
+  if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+  output_dir = os.path.join(output_name, "input")
+  writeCsvs(histogram, os.path.join(data_dir, output_dir))
 
 
 if __name__ == "__main__":

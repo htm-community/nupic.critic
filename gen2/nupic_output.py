@@ -48,8 +48,9 @@ class NuPICOutput(object):
   __metaclass__ = ABCMeta
 
 
-  def __init__(self, name, path=DEFAULT_OUTPUT_PATH):
+  def __init__(self, name, predictedField, path=DEFAULT_OUTPUT_PATH):
     self.name = name
+    self.predictedField = predictedField
     self.path = path
 
 
@@ -91,7 +92,7 @@ class NuPICFileOutput(NuPICOutput):
       self.outputWriter.writerow(keys)
       self._headerWritten = True
     predicted = result.inferences["multiStepBestPredictions"][1]
-    value = row["b3"]
+    value = row[self.predictedField]
     anomalyLikelihood = self.anomalyLikelihoodHelper.anomalyProbability(
       value, row["anomalyScore"], row["seconds"]
     )
