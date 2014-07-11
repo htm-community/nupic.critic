@@ -38,5 +38,5 @@ Runs all the prepared data in the input directory. Expects this directory to hav
     
 Plots the results. Use `--wav` to pass in a WAV file to play at the same time (**CURRENTLY OUT OF SERVICE**).  There are several options for this, which you can see with the `--help` flag. 
 
-- `--wav,-w`: _[default `None`]_ OUT OF SERVICE! Path to a WAV file to play synced to the plot.
+- `--wav,-w`: _[default `None`]_ Path to a WAV file to play synced to the plot.
 - `--maximize,-m`: _[default `False`]_ Maximize plot window.

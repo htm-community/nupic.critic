@@ -2,9 +2,9 @@
 import sys
 import os
 import csv
+import time
+import subprocess
 from optparse import OptionParser
-import matplotlib
-matplotlib.use('TKAgg')
 from plot_output import NuPICPlotOutput
 
 WINDOW = 200
@@ -23,8 +23,7 @@ parser.add_option(
   "--wav",
   dest="wav",
   default=None,
-  # FIXME: audio option doesn't work.
-  help="OUT OF SERVICE! Path to a WAV file to play synced to the plot.")
+  help="Path to a WAV file to play synced to the plot.")
 parser.add_option(
   "-m",
   "--maximize",
@@ -87,13 +86,21 @@ def run(input_dir, audio_file, maximize):
 
   output = NuPICPlotOutput(input_dir, bins, maximize)
 
+  if audio_file:
+    subprocess.call("open %s" % audio_file, shell=True)
+    time.sleep(0.5)
+
+  start = time.time()
+
   while True:
     try:
       next_lines = [reader.next() for reader in readers]
     except StopIteration:
       break
 
-    seconds = next_lines[0][headers[0].index("seconds")]
+    seconds = float(next_lines[0][headers[0].index("seconds")])
+    data_time = start + seconds
+
     bin_values = []
     anomaly_likelihoods = []
 
@@ -106,6 +113,12 @@ def run(input_dir, audio_file, maximize):
       anomaly_likelihoods.append(anomaly_likelihood)
 
     output.write(seconds, bin_values, anomaly_likelihoods)
+
+    # If syncing to an audio file, wait for it to catch up.
+    if audio_file:
+      while time.time() < data_time:
+        time.sleep(0.1)
+
 
   output.close()
   for f in input_files:
