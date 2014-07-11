@@ -1,3 +1,8 @@
+## Requirements
+
+- [matplotlib](http://matplotlib.org/)
+- [numpy](http://www.numpy.org/)
+
 Get anomalies from audio input in 3 easy steps!
 
 ![NuPIC Critic plot screenshot](http://i.imgur.com/QzWQion.png)
