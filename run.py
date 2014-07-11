@@ -32,7 +32,7 @@ import nupic_output
 
 
 MODEL_PARAMS_DIR = "./model_params"
-DEFAULT_MODEL_PARAMS_NAME = "1field_anomaly"
+DEFAULT_MODEL_PARAMS_NAME = "grok_anomaly"
 verbose = False
 
 
