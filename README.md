@@ -46,3 +46,8 @@ Plots the results. Use `--wav` to pass in a WAV file to play at the same time.  
 As an example, if you would like to flag a region as anomalous if the NuPIC anomaly likelihoods for 5 frequency bins are above `0.8`, you would use the following options:
 
     ./plotter.py path/to/nupic/output -t 0.8 -g 5
+
+
+## Notes
+
+Could be applicable to this [heart sound challenge](http://www.peterjbentley.com/heartchallenge/).
