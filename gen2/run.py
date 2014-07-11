@@ -46,7 +46,8 @@ parser.add_option(
   "--model_params",
   dest="model_params_name",
   default=DEFAULT_MODEL_PARAMS_NAME,
-  help="Name of the model params to use (without the '_model_params.py').")
+  help="Name of the model params to use (without the '_model_params.py'). You "
+       "won't need to set this unless you really know what you are doing.")
 parser.add_option(
   "-p",
   "--plot",
