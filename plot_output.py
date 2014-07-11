@@ -33,11 +33,9 @@ import matplotlib.gridspec as gridspec
 WINDOW = 300
 HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
-ANOMALY_THRESHOLD = 0.9
 
 
-def extract_anomaly_indices(anomaly_likelihoods):
-
+def extract_anomaly_indices(anomaly_likelihoods, anomaly_threshold):
   anomalies_out = []
   anomalyStart = None
 
@@ -45,7 +43,7 @@ def extract_anomaly_indices(anomaly_likelihoods):
 
   for i, likelihood_batch in enumerate(bin_values):
     likelihood_batch = [float(v) for v in bin_values[i]]
-    if max(likelihood_batch) >= ANOMALY_THRESHOLD:
+    if max(likelihood_batch) >= anomaly_threshold:
       if anomalyStart is None:
         # Mark start of anomaly
         anomalyStart = i
@@ -63,7 +61,6 @@ def extract_anomaly_indices(anomaly_likelihoods):
       anomalyStart, len(bin_values)-1,
       ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
     ))
-
   return anomalies_out
 
 
@@ -71,9 +68,10 @@ def extract_anomaly_indices(anomaly_likelihoods):
 class NuPICPlotOutput(object):
 
 
-  def __init__(self, name, bins, maximize):
+  def __init__(self, name, bins, maximize, anomaly_threshold):
     self.name = name
     self.bins = bins
+    self.anomaly_threshold = anomaly_threshold
     # Turn matplotlib interactive mode on.
     plt.ion()
     self.seconds = []
@@ -92,7 +90,7 @@ class NuPICPlotOutput(object):
 
     self._anomalyGraph = fig.add_subplot(gs[1])
 
-    plt.ylabel('Likelihood')
+    plt.ylabel('Anomalies')
     plt.xlabel('Seconds')
 
     # Maximizes window
@@ -166,7 +164,8 @@ class NuPICPlotOutput(object):
     self._chart_highlights = []
 
     # Highlight anomalies in anomaly chart
-    anomalies = extract_anomaly_indices(self.anomaly_likelihoods)
+    anomalies = extract_anomaly_indices(self.anomaly_likelihoods,
+                                        self.anomaly_threshold)
     self.highlightChart(anomalies, self._anomalyGraph)
 
     # maxValue = max(self.allValues)

@@ -10,7 +10,7 @@ from plot_output import NuPICPlotOutput
 WINDOW = 200
 HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
-ANOMALY_THRESHOLD = 0.9
+DEFAULT_ANOMALY_THRESHOLD = 0.9
 
 
 parser = OptionParser(
@@ -32,47 +32,25 @@ parser.add_option(
   dest="maximize",
   help="Maximize plot window."
 )
+parser.add_option(
+  "-t",
+  "--anomaly_threshold",
+  dest="anomaly_threshold",
+  default=DEFAULT_ANOMALY_THRESHOLD,
+  help="Value the anomaly likelihood(s) must breach before being marked as "
+       "anomalous in the chart."
+)
+parser.add_option(
+  "-a",
+  "--use_anomaly_score",
+  action="store_true",
+  default=False,
+  dest="use_anomaly_score",
+  help="Use the anomalyScore from NuPIC instead of the anomalyLikelihood."
+)
 
 
-
-def highlightChart(old_highlights, new_highlights, chart):
-  for highlight in new_highlights:
-    # Each highlight contains [start-index, stop-index, color, alpha]
-    old_highlights.append(chart.axvspan(
-      highlight[0], highlight[1],
-      color=highlight[2], alpha=highlight[3]
-    ))
-
-
-
-def extractAnomalyIndices(anomalyLikelihood):
-  anomaliesOut = []
-  anomalyStart = None
-  for i, likelihood in enumerate(anomalyLikelihood):
-    if likelihood >= ANOMALY_THRESHOLD:
-      if anomalyStart is None:
-        # Mark start of anomaly
-        anomalyStart = i
-    else:
-      if anomalyStart is not None:
-        # Mark end of anomaly
-        anomaliesOut.append((
-          anomalyStart, i, ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
-        ))
-        anomalyStart = None
-
-  # Cap it off if we're still in the middle of an anomaly
-  if anomalyStart is not None:
-    anomaliesOut.append((
-      anomalyStart, len(anomalyLikelihood)-1,
-      ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
-    ))
-  print anomaliesOut
-  return anomaliesOut
-
-
-
-def run(input_dir, audio_file, maximize):
+def run(input_dir, audio_file, maximize, anomaly_threshold, use_anomaly_score):
   file_names = os.listdir(input_dir)
   bins = [os.path.splitext(n)[0] for n in file_names]
   input_files = [open(os.path.join(input_dir, f)) for f in file_names]
@@ -84,7 +62,7 @@ def run(input_dir, audio_file, maximize):
     reader.next()
     reader.next()
 
-  output = NuPICPlotOutput(input_dir, bins, maximize)
+  output = NuPICPlotOutput(input_dir, bins, maximize, anomaly_threshold)
 
   if audio_file:
     subprocess.call("open %s" % audio_file, shell=True)
@@ -108,7 +86,11 @@ def run(input_dir, audio_file, maximize):
       bin = bins[i]
       header = headers[i]
       bin_value = line[header.index(bin)]
-      anomaly_likelihood = line[header.index("anomalyLikelihood")]
+      if use_anomaly_score:
+        anomaly_key = "anomalyScore"
+      else:
+        anomaly_key = "anomalyLikelihood"
+      anomaly_likelihood = line[header.index(anomaly_key)]
       bin_values.append(bin_value)
       anomaly_likelihoods.append(anomaly_likelihood)
 
@@ -135,4 +117,10 @@ if __name__ == "__main__":
 
   audio_file = options.wav
 
-  run(input_dir, audio_file, options.maximize)
+  run(
+    input_dir,
+    audio_file,
+    options.maximize,
+    float(options.anomaly_threshold),
+    options.use_anomaly_score
+  )

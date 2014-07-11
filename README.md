@@ -40,3 +40,6 @@ Plots the results. Use `--wav` to pass in a WAV file to play at the same time (*
 
 - `--wav,-w`: _[default `None`]_ Path to a WAV file to play synced to the plot.
 - `--maximize,-m`: _[default `False`]_ Maximize plot window.
+- `--use_anomaly_score,-a`: _[default `False`]_ Use the anomalyScore from NuPIC instead of the anomalyLikelihood.
+- `--anomaly_threshold,-t`: _[default 0.9]_ Value the anomaly likelihood(s) must breach before being marked as anomalous in the chart.
+
