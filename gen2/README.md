@@ -1,29 +1,23 @@
-### Generate NuPIC Input From WAV
+Get anomalies from audio input in 3 easy steps!
+
+![NuPIC Critic plot screenshot](http://i.imgur.com/QzWQion.png)
+
+### 1. Generate NuPIC Input From WAV
 
     ./convert_wav.py <path/to/wav>
 
 There are several options for this, which you can see with the `--help` flag. You can control the FFT histogram sample rate, the number of histogram buckets, and the output directory where the file is written.
 
-The resulting file is formatted for a swarm or NuPIC model input.
+The resulting folder contains files formatted for NuPIC model input.
 
-### Swarm Over NuPIC Input File
-
-> **WARNING**: This step is deprecated, but I'm leaving the docs here for now because it still works. There are pre-canned anomaly model params now in the `model_params` directory.
-
-    ./swarm.py <path/to/input> [options]
-    
-There are also a bunch of swarm options you can specify on the command line, which you can see with the `--help` flag.
-
-This produces a model parameter file in the `model_params` directory, which is created if you don't have one already.
-
-### Run NuPIC
+### 2. Run NuPIC
 
     ./run.py <path/to/input/directory> [options]
     
 Runs all the prepared data in the input directory. Expects this directory to have been created by the `convert_wav.py` script above.
 
-### Plot the Results
+### 3. Plot the Results
 
     ./plotter.py <path/to/nupic/output/directory> [options]
     
-Plots the results. Use `--wav` to pass in a WAV file to play at the same time.
+Plots the results. Use `--wav` to pass in a WAV file to play at the same time (**CURRENTLY OUT OF SERVICE**).  There are several options for this, which you can see with the `--help` flag. 

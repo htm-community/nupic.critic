@@ -2,19 +2,15 @@
 import sys
 import os
 import csv
-import time
-import subprocess
-from collections import deque
 from optparse import OptionParser
 import matplotlib
 matplotlib.use('TKAgg')
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+from plot_output import NuPICPlotOutput
 
 WINDOW = 200
 HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
-ANOMALY_THRESHOLD = 0.5
+ANOMALY_THRESHOLD = 0.9
 
 
 parser = OptionParser(
@@ -27,7 +23,16 @@ parser.add_option(
   "--wav",
   dest="wav",
   default=None,
-  help="Path to a WAV file to play synced to the plot.")
+  # FIXME: audio option doesn't work.
+  help="OUT OF SERVICE! Path to a WAV file to play synced to the plot.")
+parser.add_option(
+  "-m",
+  "--maximize",
+  action="store_true",
+  default=False,
+  dest="maximize",
+  help="Maximize plot window."
+)
 
 
 
@@ -63,11 +68,12 @@ def extractAnomalyIndices(anomalyLikelihood):
       anomalyStart, len(anomalyLikelihood)-1,
       ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
     ))
+  print anomaliesOut
   return anomaliesOut
 
 
 
-def run(input_dir, audio_file=None):
+def run(input_dir, audio_file, maximize):
   file_names = os.listdir(input_dir)
   bins = [os.path.splitext(n)[0] for n in file_names]
   input_files = [open(os.path.join(input_dir, f)) for f in file_names]
@@ -79,59 +85,7 @@ def run(input_dir, audio_file=None):
     reader.next()
     reader.next()
 
-  plt.ion()
-  fig = plt.figure(figsize=(20, 10))
-  gs = gridspec.GridSpec(2, 1)
-  value_plot = fig.add_subplot(gs[0, 0])
-  anomaly_plot = fig.add_subplot(gs[1, 0])
-  anomaly_plot.set_ylim([-0.2, 1.2])
-
-  data = []
-  plots = {}
-  anomaly_highlights = []
-
-  for i, header in enumerate(headers):
-    bin_data = {}
-    for column in header:
-      if column.startswith("anomaly"):
-        column_name = "%s-%s" % (bins[i], column)
-      else:
-        column_name = column
-      bin_data[column_name] = deque([0.0] * WINDOW, maxlen=WINDOW)
-    data.append(bin_data)
-
-  anomaly_legend = []
-  # First, we initialize the chart with the first row of data.
-  next_lines = [reader.next() for reader in readers]
-  for i, row in enumerate(next_lines):
-    # Initialize with first row.
-    for row_index, row_value in enumerate(row):
-      for header_index, hdr in enumerate(headers[i]):
-        # Plots major input data, but not predictions
-        if row_index == header_index:
-          if hdr.startswith("b"):
-            data[i][hdr].append(float(row_value))
-            plots[hdr], = value_plot.plot(data[i][hdr])
-          elif hdr.startswith("anomaly"):
-            anomaly_label = "%s-%s" % (bins[i], hdr)
-            data[i][anomaly_label].append(float(row_value))
-            anomaly_legend.append(anomaly_label)
-            color = "y"
-            if hdr == "anomalyLikelihood":
-              color = "r"
-            plots[anomaly_label], = anomaly_plot.plot(data[i][anomaly_label], color)
-
-  value_plot.legend(bins, loc=3)
-  # anomaly_plot.legend(anomaly_legend, loc=3)
-  plt.draw()
-  plt.tight_layout()
-
-  if audio_file:
-    subprocess.call("open %s" % audio_file, shell=True)
-    time.sleep(0.5)
-
-  start = time.time()
-  max_y_value = 0.0
+  output = NuPICPlotOutput(input_dir, bins, maximize)
 
   while True:
     try:
@@ -139,51 +93,21 @@ def run(input_dir, audio_file=None):
     except StopIteration:
       break
 
-    for i, row in enumerate(next_lines):
-      data_time = start + float(row[headers[i].index("seconds")])
-      # Initialize with first row.
-      for row_index, row_value in enumerate(row):
-        for header_index, hdr in enumerate(headers[i]):
+    seconds = next_lines[0][headers[0].index("seconds")]
+    bin_values = []
+    anomaly_likelihoods = []
 
-          # Plots major input data, but not predictions
-          if row_index == header_index:
-            label = hdr
+    for i, line in enumerate(next_lines):
+      bin = bins[i]
+      header = headers[i]
+      bin_value = line[header.index(bin)]
+      anomaly_likelihood = line[header.index("anomalyLikelihood")]
+      bin_values.append(bin_value)
+      anomaly_likelihoods.append(anomaly_likelihood)
 
-            if hdr.startswith("anomaly"):
-              label = "%s-%s" % (bins[i], hdr)
-            data[i][label].append(float(row_value))
+    output.write(seconds, bin_values, anomaly_likelihoods)
 
-            if not label == "seconds" and label in plots:
-              if float(row_value) > max_y_value:
-                max_y_value = float(row_value)
-
-              plot = plots[label]
-              plot.set_xdata(data[i]["seconds"])
-              plot.set_ydata(data[i][label])
-
-    # Remove previous highlighted regions
-    for poly in anomaly_highlights:
-      poly.remove()
-    anomaly_highlights = []
-
-    # highlightChart(
-    #   anomaly_highlights,
-    #   extractAnomalyIndices(data[0]["b0-anomalyLikelihood"]),
-    #   anomaly_plot
-    # )
-
-    value_plot.set_ylim([0, max_y_value])
-    value_plot.relim()
-    value_plot.autoscale_view(True, True, True)
-    anomaly_plot.relim()
-    anomaly_plot.autoscale_view(True, True, True)
-    plt.draw()
-
-    if audio_file:
-      while time.time() < data_time:
-        time.sleep(0.1)
-
-
+  output.close()
   for f in input_files:
     f.close()
 
@@ -198,4 +122,4 @@ if __name__ == "__main__":
 
   audio_file = options.wav
 
-  run(input_dir, audio_file)
+  run(input_dir, audio_file, options.maximize)
