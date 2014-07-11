@@ -43,3 +43,6 @@ Plots the results. Use `--wav` to pass in a WAV file to play at the same time (*
 - `--use_anomaly_score,-a`: _[default `False`]_ Use the anomalyScore from NuPIC instead of the anomalyLikelihood.
 - `--anomaly_threshold,-t`: _[default 0.9]_ Value the anomaly likelihood(s) must breach before being marked as anomalous in the chart.
 
+As an example, if you would like to flag a region as anomalous if the NuPIC anomaly likelihoods for 5 frequency bins are above `0.8`, you would use the following options:
+
+    ./plotter.py path/to/nupic/output -t 0.8 -g 5

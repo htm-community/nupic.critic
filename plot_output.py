@@ -35,7 +35,17 @@ HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
 
 
-def extract_anomaly_indices(anomaly_likelihoods, anomaly_threshold):
+
+def triggers_anomaly_threshold(data, anomaly_threshold, trigger_count):
+  def above_threshold(value):
+    return value >= anomaly_threshold
+  breach_count = len(filter(above_threshold, data))
+  return breach_count >= trigger_count
+
+
+
+def extract_anomaly_indices(anomaly_likelihoods,
+                            anomaly_threshold, anomaly_trigger_count):
   anomalies_out = []
   anomalyStart = None
 
@@ -43,7 +53,7 @@ def extract_anomaly_indices(anomaly_likelihoods, anomaly_threshold):
 
   for i, likelihood_batch in enumerate(bin_values):
     likelihood_batch = [float(v) for v in bin_values[i]]
-    if max(likelihood_batch) >= anomaly_threshold:
+    if triggers_anomaly_threshold(likelihood_batch, anomaly_threshold, anomaly_trigger_count):
       if anomalyStart is None:
         # Mark start of anomaly
         anomalyStart = i
@@ -68,10 +78,11 @@ def extract_anomaly_indices(anomaly_likelihoods, anomaly_threshold):
 class NuPICPlotOutput(object):
 
 
-  def __init__(self, name, bins, maximize, anomaly_threshold):
+  def __init__(self, name, bins, maximize, anomaly_threshold, anomaly_trigger_count):
     self.name = name
     self.bins = bins
     self.anomaly_threshold = anomaly_threshold
+    self.anomaly_trigger_count = anomaly_trigger_count
     # Turn matplotlib interactive mode on.
     plt.ion()
     self.seconds = []
@@ -165,7 +176,8 @@ class NuPICPlotOutput(object):
 
     # Highlight anomalies in anomaly chart
     anomalies = extract_anomaly_indices(self.anomaly_likelihoods,
-                                        self.anomaly_threshold)
+                                        self.anomaly_threshold,
+                                        self.anomaly_trigger_count)
     self.highlightChart(anomalies, self._anomalyGraph)
 
     # maxValue = max(self.allValues)

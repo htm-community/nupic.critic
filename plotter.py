@@ -11,6 +11,7 @@ WINDOW = 200
 HIGHLIGHT_ALPHA = 0.3
 ANOMALY_HIGHLIGHT_COLOR = 'red'
 DEFAULT_ANOMALY_THRESHOLD = 0.9
+DEFAULT_ANOMALY_TRIGGER_COUNT = 1
 
 
 parser = OptionParser(
@@ -41,6 +42,14 @@ parser.add_option(
        "anomalous in the chart."
 )
 parser.add_option(
+  "-g",
+  "--anomaly_trigger",
+  dest="anomaly_trigger",
+  default=DEFAULT_ANOMALY_TRIGGER_COUNT,
+  help="How many bins must be above the anomaly threshold to display an "
+       "anomaly on the chart."
+)
+parser.add_option(
   "-a",
   "--use_anomaly_score",
   action="store_true",
@@ -50,7 +59,8 @@ parser.add_option(
 )
 
 
-def run(input_dir, audio_file, maximize, anomaly_threshold, use_anomaly_score):
+def run(input_dir, audio_file, maximize,
+        anomaly_threshold, anomaly_trigger_count, use_anomaly_score):
   file_names = os.listdir(input_dir)
   bins = [os.path.splitext(n)[0] for n in file_names]
   input_files = [open(os.path.join(input_dir, f)) for f in file_names]
@@ -62,7 +72,7 @@ def run(input_dir, audio_file, maximize, anomaly_threshold, use_anomaly_score):
     reader.next()
     reader.next()
 
-  output = NuPICPlotOutput(input_dir, bins, maximize, anomaly_threshold)
+  output = NuPICPlotOutput(input_dir, bins, maximize, anomaly_threshold, anomaly_trigger_count)
 
   if audio_file:
     subprocess.call("open %s" % audio_file, shell=True)
@@ -122,5 +132,6 @@ if __name__ == "__main__":
     audio_file,
     options.maximize,
     float(options.anomaly_threshold),
+    int(options.anomaly_trigger),
     options.use_anomaly_score
   )
