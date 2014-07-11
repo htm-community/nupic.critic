@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
 WINDOW = 200
+HIGHLIGHT_ALPHA = 0.3
+ANOMALY_HIGHLIGHT_COLOR = 'red'
+ANOMALY_THRESHOLD = 0.5
 
 
 parser = OptionParser(
@@ -25,6 +28,43 @@ parser.add_option(
   dest="wav",
   default=None,
   help="Path to a WAV file to play synced to the plot.")
+
+
+
+def highlightChart(old_highlights, new_highlights, chart):
+  for highlight in new_highlights:
+    # Each highlight contains [start-index, stop-index, color, alpha]
+    old_highlights.append(chart.axvspan(
+      highlight[0], highlight[1],
+      color=highlight[2], alpha=highlight[3]
+    ))
+
+
+
+def extractAnomalyIndices(anomalyLikelihood):
+  anomaliesOut = []
+  anomalyStart = None
+  for i, likelihood in enumerate(anomalyLikelihood):
+    if likelihood >= ANOMALY_THRESHOLD:
+      if anomalyStart is None:
+        # Mark start of anomaly
+        anomalyStart = i
+    else:
+      if anomalyStart is not None:
+        # Mark end of anomaly
+        anomaliesOut.append((
+          anomalyStart, i, ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
+        ))
+        anomalyStart = None
+
+  # Cap it off if we're still in the middle of an anomaly
+  if anomalyStart is not None:
+    anomaliesOut.append((
+      anomalyStart, len(anomalyLikelihood)-1,
+      ANOMALY_HIGHLIGHT_COLOR, HIGHLIGHT_ALPHA
+    ))
+  return anomaliesOut
+
 
 
 def run(input_dir, audio_file=None):
@@ -48,6 +88,7 @@ def run(input_dir, audio_file=None):
 
   data = []
   plots = {}
+  anomaly_highlights = []
 
   for i, header in enumerate(headers):
     bin_data = {}
@@ -69,11 +110,11 @@ def run(input_dir, audio_file=None):
         # Plots major input data, but not predictions
         if row_index == header_index:
           if hdr.startswith("b"):
-            data[i][hdr].append(row_value)
+            data[i][hdr].append(float(row_value))
             plots[hdr], = value_plot.plot(data[i][hdr])
           elif hdr.startswith("anomaly"):
             anomaly_label = "%s-%s" % (bins[i], hdr)
-            data[i][anomaly_label].append(row_value)
+            data[i][anomaly_label].append(float(row_value))
             anomaly_legend.append(anomaly_label)
             color = "y"
             if hdr == "anomalyLikelihood":
@@ -110,7 +151,7 @@ def run(input_dir, audio_file=None):
 
             if hdr.startswith("anomaly"):
               label = "%s-%s" % (bins[i], hdr)
-            data[i][label].append(row_value)
+            data[i][label].append(float(row_value))
 
             if not label == "seconds" and label in plots:
               if float(row_value) > max_y_value:
@@ -119,6 +160,17 @@ def run(input_dir, audio_file=None):
               plot = plots[label]
               plot.set_xdata(data[i]["seconds"])
               plot.set_ydata(data[i][label])
+
+    # Remove previous highlighted regions
+    for poly in anomaly_highlights:
+      poly.remove()
+    anomaly_highlights = []
+
+    # highlightChart(
+    #   anomaly_highlights,
+    #   extractAnomalyIndices(data[0]["b0-anomalyLikelihood"]),
+    #   anomaly_plot
+    # )
 
     value_plot.set_ylim([0, max_y_value])
     value_plot.relim()
