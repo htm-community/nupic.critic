@@ -21,6 +21,7 @@ The resulting folder contains files formatted for NuPIC model input.
 - `--sample-rate,-s`: _[default 5]_ How many samples to take per second.
 - `--output_directory,-o`: _[default "output"]_ Directory to write the NuPIC input files.
 - `--verbose,-v`: _[default `False`]_ Print debugging statements.
+- `--loop,-l`: _[default 1]_ How many times to loop the WAV file (for reinforcing a pattern in NuPIC while training).
 
 ### 2. Run NuPIC
 
@@ -31,6 +32,7 @@ Runs all the prepared data in the input directory. Expects this directory to hav
 - `--model_params,-m`: _[default "grok_anomaly"]_ Name of the model params to use (without the '_model_params.py'). You won't need to set this unless you really know what you are doing.
 - `--plot,-p`: _[default `False`]_ Plots the output instead of writing to file.
 - `--verbose,-v`: _[default `False`]_ Print debugging statements.
+- `--save,-s`: _[default `False`]_ Will checkpoint the model after running so it can be reused later.
 
 ### 3. Plot the Results
 

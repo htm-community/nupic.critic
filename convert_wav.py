@@ -44,9 +44,17 @@ parser.add_option(
   default=False,
   dest="verbose",
   help="Print debugging statements.")
+parser.add_option(
+  "-l",
+  "--loop",
+  dest="loop_times",
+  default=1,
+  help="How many times to loop the WAV file (for reinforcing a pattern in "
+       "NuPIC while training)."
+)
 
 
-def read_wav_data(wave_path):
+def read_wav_data(wave_path, loop_times):
   print "Opening %s" % wave_path
   spf = wave.open(wave_path, "r")
 
@@ -60,6 +68,16 @@ def read_wav_data(wave_path):
 
   # Convert to numpy array.
   signal = np.fromstring(signal, 'Int16')
+
+  if loop_times > 1:
+    if verbose:
+      print "Looping WAV onto itself %i times..." % loop_times
+    looped_signal = np.copy(signal)
+    for i in xrange(1, loop_times):
+      looped_signal = np.append(looped_signal, signal)
+    signal = looped_signal
+
+
   signal_length = len(signal)
   # Total seconds length of the wave file.
   seconds = signal_length / frame_rate
@@ -141,9 +159,9 @@ def writeCsvs(data, out_path):
 
 
 
-def run(buckets, sample_rate, wav_path, data_dir):
+def run(buckets, sample_rate, wav_path, loop_times, data_dir):
   sample_width, frame_rate, signal_length, seconds, signal \
-    = read_wav_data(wav_path)
+    = read_wav_data(wav_path, loop_times)
   histogram = get_fft_histogram(
     signal, frame_rate, seconds, sample_rate, buckets
   )
@@ -169,5 +187,6 @@ if __name__ == "__main__":
     int(options.buckets),
     int(options.sample_rate),
     wav_path,
+    int(options.loop_times),
     options.output_dir
   )

@@ -63,6 +63,14 @@ parser.add_option(
   default=False,
   dest="verbose",
   help="Print debugging statements.")
+parser.add_option(
+  "-s",
+  "--save",
+  action="store_true",
+  default=False,
+  dest="save",
+  help="Will checkpoint the model after running so it can be reused later."
+)
 
 
 def createModel(modelParams, bin):
@@ -128,7 +136,7 @@ def runIoThroughNupic(input_path, output_path, model, model_name, bin, plot):
 
 
 
-def runModels(input_path, model_params_name, plot):
+def runModels(input_path, model_params_name, save, plot):
   print "Creating models from %s using %s_model_params..." \
         % (input_path, model_params_name)
 
@@ -143,6 +151,10 @@ def runModels(input_path, model_params_name, plot):
     if not os.path.exists(output_path):
       os.makedirs(output_path)
     runIoThroughNupic(input_file_path, output_path, model, bin, bin, plot)
+    if save:
+      absolute_save_path = os.path.abspath(os.path.join(output_path, "saved_model"))
+      model.save(absolute_save_path)
+      print "Model checkpoint saved at %s." % absolute_save_path
 
 
 
@@ -156,4 +168,4 @@ if __name__ == "__main__":
 
   verbose = options.verbose
 
-  runModels(input_path, options.model_params_name, options.plot)
+  runModels(input_path, options.model_params_name, options.save, options.plot)

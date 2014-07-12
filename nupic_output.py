@@ -106,7 +106,8 @@ class NuPICFileOutput(NuPICOutput):
 
   def close(self):
     self.outputFile.close()
-    print "Done. Wrote %i data lines to %s." % (self.lineCount, self.outputFile)
+    print "Wrote %i data lines to %s." % \
+          (self.lineCount, os.path.abspath(self.outputFile.name))
 
 
 
