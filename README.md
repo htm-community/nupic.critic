@@ -1,5 +1,6 @@
 ## Requirements
 
+- [NuPIC](https://github.com/numenta/nupic)
 - [matplotlib](http://matplotlib.org/)
 - [numpy](http://www.numpy.org/)
 
@@ -22,6 +23,7 @@ The resulting folder contains files formatted for NuPIC model input.
 - `--output_directory,-o`: _[default "output"]_ Directory to write the NuPIC input files.
 - `--verbose,-v`: _[default `False`]_ Print debugging statements.
 - `--loop,-l`: _[default 1]_ How many times to loop the WAV file (for reinforcing a pattern in NuPIC while training).
+- `--plot,-p`: _[default `False`]_ Plot WAV spectrogram in matplotlib instead of writing NuPIC input files.
 
 ### 2. Run NuPIC
 

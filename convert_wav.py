@@ -7,6 +7,7 @@ import numpy as np
 import wave
 import csv
 import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 
 DEFAULT_BUCKETS = 10
@@ -44,6 +45,13 @@ parser.add_option(
   default=False,
   dest="verbose",
   help="Print debugging statements.")
+parser.add_option(
+  "-p",
+  "--plot",
+  action="store_true",
+  default=False,
+  dest="plot",
+  help="Plot WAV spectrogram in matplotlib instead of writing NuPIC input files.")
 parser.add_option(
   "-l",
   "--loop",
@@ -96,7 +104,7 @@ def read_wav_data(wave_path, loop_times):
 
 
 
-def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets):
+def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets, plot):
   window_size = frame_rate / sample_rate
   overlap_ratio = 0.0
 
@@ -117,24 +125,35 @@ def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets):
   arr2D = 10 * np.log10(periodogram)
   arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
-  flipped = np.transpose(arr2D)
+  if plot:
+    fig = plt.figure(figsize=(6, 3.2))
+    ax = fig.add_subplot(111)
+    ax.set_title('Spectrogram')
+    plt.imshow(arr2D)
+    ax.set_aspect('equal')
+    plt.colorbar(orientation='vertical')
+    plt.show()
+    return None
 
-  if verbose:
-    print "Total samples: %i" % len(flipped)
-    print "Samples per second: %f" % (len(flipped) / seconds)
-    print "Grouping FFT into %i-bucket histogram..." % buckets
+  else:
+    flipped = np.transpose(arr2D)
 
-  grouped = []
-  for i, sample in enumerate(flipped):
-    perc_done = float(i+1) / len(flipped)
-    elapsed_seconds = (perc_done * seconds)
-    histogram = np.array(np.histogram(
-      sample, bins=buckets)[0]
-    ).tolist()
-    histogram = [elapsed_seconds] + histogram
-    grouped.append(histogram)
+    if verbose:
+      print "Total samples: %i" % len(flipped)
+      print "Samples per second: %f" % (len(flipped) / seconds)
+      print "Grouping FFT into %i-bucket histogram..." % buckets
 
-  return grouped
+    grouped = []
+    for i, sample in enumerate(flipped):
+      perc_done = float(i+1) / len(flipped)
+      elapsed_seconds = (perc_done * seconds)
+      histogram = np.array(np.histogram(
+        sample, bins=buckets)[0]
+      ).tolist()
+      histogram = [elapsed_seconds] + histogram
+      grouped.append(histogram)
+
+    return grouped
 
 
 
@@ -159,18 +178,19 @@ def writeCsvs(data, out_path):
 
 
 
-def run(buckets, sample_rate, wav_path, loop_times, data_dir):
+def run(buckets, sample_rate, wav_path, loop_times, plot, data_dir):
   sample_width, frame_rate, signal_length, seconds, signal \
     = read_wav_data(wav_path, loop_times)
   histogram = get_fft_histogram(
-    signal, frame_rate, seconds, sample_rate, buckets
+    signal, frame_rate, seconds, sample_rate, buckets, plot
   )
-  wav_in_name = os.path.splitext(os.path.basename(wav_path))[0]
-  output_name = "%s_%ihz_%ib" % (wav_in_name, sample_rate, buckets)
-  if not os.path.exists(data_dir):
-    os.makedirs(data_dir)
-  output_dir = os.path.join(output_name, "input")
-  writeCsvs(histogram, os.path.join(data_dir, output_dir))
+  if histogram:
+    wav_in_name = os.path.splitext(os.path.basename(wav_path))[0]
+    output_name = "%s_%ihz_%ib" % (wav_in_name, sample_rate, buckets)
+    if not os.path.exists(data_dir):
+      os.makedirs(data_dir)
+    output_dir = os.path.join(output_name, "input")
+    writeCsvs(histogram, os.path.join(data_dir, output_dir))
 
 
 if __name__ == "__main__":
@@ -188,5 +208,6 @@ if __name__ == "__main__":
     int(options.sample_rate),
     wav_path,
     int(options.loop_times),
+    options.plot,
     options.output_dir
   )
