@@ -51,7 +51,7 @@ As an example, if you would like to flag a region as anomalous if the NuPIC anom
 
     ./plotter.py path/to/nupic/output -t 0.8 -g 5
 
-## [Demo](https://www.youtube.com/watch?v=rNbntHRdEmM)]
+## [Demo](https://www.youtube.com/watch?v=rNbntHRdEmM)
 
 [![Live Demo on YouTube](http://img.youtube.com/vi/rNbntHRdEmM/hqdefault.jpg)](https://www.youtube.com/watch?v=rNbntHRdEmM)
 
