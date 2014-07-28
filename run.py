@@ -71,24 +71,38 @@ parser.add_option(
   dest="save",
   help="Will checkpoint the model after running so it can be reused later."
 )
+parser.add_option(
+  "-r",
+  "--resurrect",
+  default=False,
+  dest="resurrect",
+  help="Uses specified model checkpoint instead of creating a new model using "
+       "the model parameters. Learning will be automatically disabled on this "
+       "model."
+)
 
 
-def createModel(modelParams, bin):
-  model = ModelFactory.create(modelParams)
+def create_model(model_params, bin):
+  model = ModelFactory.create(model_params)
   model.enableInference({"predictedField": bin})
   return model
 
 
 
-def getModelParamsFromName(modelName, bin):
+def resurrect_model(saved_model):
+  return ModelFactory.loadFromCheckpoint(saved_model)
+
+
+
+def get_model_params_from(model_name, bin):
   importName = "model_params.%s_model_params" % (
-    modelName.replace(" ", "_").replace("-", "_")
+    model_name.replace(" ", "_").replace("-", "_")
   )
   print "Importing model params from %s for bin %s" % (importName, bin)
   try:
     importedModelParams = importlib.import_module(importName).MODEL_PARAMS
   except ImportError:
-    raise Exception("No model params exist for '%s'!" % modelName)
+    raise Exception("No model params exist for '%s'!" % model_name)
   # Replace the field name with the bin name
   encoder = importedModelParams['modelParams']['sensorParams']['encoders']['REPLACE_ME']
   encoder['fieldname'] = bin
@@ -99,7 +113,7 @@ def getModelParamsFromName(modelName, bin):
 
 
 
-def runIoThroughNupic(input_path, output_path, model, model_name, bin, plot):
+def run_io_through_nupic(input_path, output_path, model, model_name, bin, plot):
   with open(input_path, "rb") as input_file:
     csvReader = csv.reader(input_file)
     # skip header rows
@@ -136,23 +150,36 @@ def runIoThroughNupic(input_path, output_path, model, model_name, bin, plot):
 
 
 
-def runModels(input_path, model_params_name, save, plot):
-  print "Creating models from %s using %s_model_params..." \
-        % (input_path, model_params_name)
-
+def run_models(input_path, model_params_name, save, saved_models_dir, plot):
   for input_file in os.listdir(input_path):
+
     if verbose:
       print "Found input file %s" % input_file
+
     bin = os.path.splitext(input_file)[0]
-    modelParams = getModelParamsFromName(model_params_name, bin)
-    model = createModel(modelParams, bin)
+
+    if saved_models_dir:
+      print "Using models from %s for input %s..." \
+            % (saved_models_dir, input_path)
+      model = resurrect_model(os.path.join(saved_models_dir, bin))
+      print "LEARNING IS DISABLED!"
+      model.disableInference()
+    else:
+      print "Creating models from %s using %s_model_params..." \
+            % (input_path, model_params_name)
+      modelParams = get_model_params_from(model_params_name, bin)
+      model = create_model(modelParams, bin)
+
     input_file_path = os.path.join(input_path, input_file)
     output_path = os.path.join(input_path, '../output')
+
     if not os.path.exists(output_path):
       os.makedirs(output_path)
-    runIoThroughNupic(input_file_path, output_path, model, bin, bin, plot)
+
+    run_io_through_nupic(input_file_path, output_path, model, bin, bin, plot)
+
     if save:
-      absolute_save_path = os.path.abspath(os.path.join(output_path, "saved_model"))
+      absolute_save_path = os.path.abspath(os.path.join(output_path, "saved_models", bin))
       model.save(absolute_save_path)
       print "Model checkpoint saved at %s." % absolute_save_path
 
@@ -168,4 +195,9 @@ if __name__ == "__main__":
 
   verbose = options.verbose
 
-  runModels(input_path, options.model_params_name, options.save, options.plot)
+  run_models(
+    input_path,
+    options.model_params_name,
+    options.save,
+    options.resurrect,
+    options.plot)

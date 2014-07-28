@@ -35,6 +35,7 @@ Runs all the prepared data in the input directory. Expects this directory to hav
 - `--plot,-p`: _[default `False`]_ Plots the output instead of writing to file.
 - `--verbose,-v`: _[default `False`]_ Print debugging statements.
 - `--save,-s`: _[default `False`]_ Will checkpoint the model after running so it can be reused later.
+- `--resurrect,-r`: _[default `False`]_ Uses specified model checkpoint instead of creating a new model using the model parameters. Learning will be automatically disabled on this model.
 
 ### 3. Plot the Results
 
