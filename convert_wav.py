@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 DEFAULT_BUCKETS = 10
-DEFAULT_SAMPLE_RATE = 5
+DEFAULT_HISTOGRAMS_PER_SECOND = 5
 DEFAULT_OUTPUT_DIR = "data"
 verbose = False
 
@@ -28,10 +28,10 @@ parser.add_option(
        "FFT.")
 parser.add_option(
   "-s",
-  "--sample_rate",
-  dest="sample_rate",
-  default=DEFAULT_SAMPLE_RATE,
-  help="How many samples to take per second.")
+  "--histograms_per_second",
+  dest="histograms_per_second",
+  default=DEFAULT_HISTOGRAMS_PER_SECOND,
+  help="How many time per second to generate a frequency histogram.")
 parser.add_option(
   "-o",
   "--output_directory",
@@ -68,7 +68,7 @@ def read_wav_data(wave_path, loop_times):
 
   channels = spf.getnchannels()
   sample_width = spf.getsampwidth()
-  frame_rate = spf.getframerate()
+  audio_sample_rate = spf.getframerate()
   num_frames = spf.getnframes()
   # Read in all frames.
   signal = spf.readframes(spf.getnframes()-1)
@@ -88,40 +88,52 @@ def read_wav_data(wave_path, loop_times):
 
   signal_length = len(signal)
   # Total seconds length of the wave file.
-  seconds = signal_length / frame_rate
+  seconds = signal_length / audio_sample_rate
 
 
   if channels > 1:
     raise ValueError("Can't process stereo files.")
   if verbose:
     print "Sample width (bytes): %i" % sample_width
-    print "Frame rate (sampling frequency): %i" % frame_rate
+    print "Frame rate (sampling frequency): %i" % audio_sample_rate
     print "Number of frames: %i" % num_frames
     print "Signal length: %i" % signal_length
     print "Seconds: %i" % seconds
 
-  return (sample_width, frame_rate, signal_length, seconds, signal)
+  return (sample_width, audio_sample_rate, signal_length, seconds, signal)
 
 
 
-def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets, plot):
-  window_size = frame_rate / sample_rate
+def get_fft_histogram(signal, audio_sample_rate, seconds, histograms_per_second, buckets, plot):
+  window_size = audio_sample_rate / histograms_per_second
   overlap_ratio = 0.0
 
   # FFT the signal and extract frequency components
+  # Some parameter explanations:
+  #   NFFT = the number of samples grouped into each specgram
+  #   Fs = The sample rate of the signal
   specgram = mlab.specgram(
     signal,
     NFFT=window_size,
-    Fs=buckets,
+    Fs=audio_sample_rate,
     window=mlab.window_hanning,
     noverlap=int(window_size * overlap_ratio))
 
+  # The periodogram is a 2D array in the format: [frequencyId][sampleId]
+  # The actual frequency of each {frequencyId} is recorded in specgram[1]
+  #   where specgram[1][frequencyId] will return the frequency value in Hz
+  # The {sampleId} represents the sample number after the total number of
+  #   samples is grouped by {window_size}
+  # Each data point in this array represents signal density at a particular
+  #   frequency and sample number
   periodogram = specgram[0]
 
   if verbose:
     print "Dimensions of periodogram: %i x %i" % (len(periodogram), len(periodogram[0]))
 
   # apply log transform since specgram() returns linear array
+  # volume is logrithmic, therefore the periodogram's data (which represents 
+  #   amplitude / density of each frequency) must be converted
   arr2D = 10 * np.log10(periodogram)
   arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
@@ -136,6 +148,8 @@ def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets, plot):
     return None
 
   else:
+    # Converts periodogram from format [frequencyId][sampleId]
+    #   to [sampleId][frequencyId]
     flipped = np.transpose(arr2D)
 
     if verbose:
@@ -144,6 +158,8 @@ def get_fft_histogram(signal, frame_rate, seconds, sample_rate, buckets, plot):
       print "Grouping FFT into %i-bucket histogram..." % buckets
 
     grouped = []
+    # Creates histograms for each sample. Groups the entire frequency range
+    #   into {buckets} number of buckets
     for i, sample in enumerate(flipped):
       perc_done = float(i+1) / len(flipped)
       elapsed_seconds = (perc_done * seconds)
@@ -178,15 +194,15 @@ def writeCsvs(data, out_path):
 
 
 
-def run(buckets, sample_rate, wav_path, loop_times, plot, data_dir):
-  sample_width, frame_rate, signal_length, seconds, signal \
+def run(buckets, histograms_per_second, wav_path, loop_times, plot, data_dir):
+  sample_width, audio_sample_rate, signal_length, seconds, signal \
     = read_wav_data(wav_path, loop_times)
   histogram = get_fft_histogram(
-    signal, frame_rate, seconds, sample_rate, buckets, plot
+    signal, audio_sample_rate_rate, seconds, histograms_per_second, buckets, plot
   )
   if histogram:
     wav_in_name = os.path.splitext(os.path.basename(wav_path))[0]
-    output_name = "%s_%ihz_%ib" % (wav_in_name, sample_rate, buckets)
+    output_name = "%s_%ihz_%ib" % (wav_in_name, histograms_per_second, buckets)
     if not os.path.exists(data_dir):
       os.makedirs(data_dir)
     output_dir = os.path.join(output_name, "input")
@@ -205,7 +221,7 @@ if __name__ == "__main__":
 
   run(
     int(options.buckets),
-    int(options.sample_rate),
+    int(options.histograms_per_second),
     wav_path,
     int(options.loop_times),
     options.plot,
