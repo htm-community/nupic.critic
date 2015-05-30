@@ -218,7 +218,7 @@ def run(buckets, histograms_per_second, wav_path, loop_times, plot, data_dir):
   sample_width, audio_sample_rate, signal_length, seconds, signal \
     = read_wav_data(wav_path, loop_times)
   histogram = get_fft_histogram(
-    signal, audio_sample_rate_rate, seconds, histograms_per_second, buckets, plot
+    signal, audio_sample_rate, seconds, histograms_per_second, buckets, plot
   )
   if histogram:
     wav_in_name = os.path.splitext(os.path.basename(wav_path))[0]
