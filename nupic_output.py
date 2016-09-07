@@ -189,7 +189,7 @@ class NuPICPlotOutput(NuPICOutput):
       self.graphs[index].relim()
       self.graphs[index].autoscale_view(True, True, True)
 
-    plt.draw()
+    plt.pause(0.000001) # This also calls draw()
     plt.legend(('actual','predicted'), loc=3)
 
 

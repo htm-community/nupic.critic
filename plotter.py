@@ -96,7 +96,7 @@ def run(input_dir, audio_file, maximize,
 
   if audio_file:
     subprocess.call("open %s" % audio_file, shell=True)
-    time.sleep(0.5)
+    time.sleep(1.0)
 
   start = time.time()
 

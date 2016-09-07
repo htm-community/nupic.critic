@@ -28,6 +28,7 @@ import wave
 import csv
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+from scipy.io import wavfile
 
 
 DEFAULT_BUCKETS = 10
@@ -84,18 +85,27 @@ parser.add_option(
 
 def read_wav_data(wave_path, loop_times):
   print "Opening %s" % wave_path
+  
+  # Get wave parameters
   spf = wave.open(wave_path, "r")
-
+  
   channels = spf.getnchannels()
+  
+  if channels > 2:
+    raise ValueError("Can't process files with more than two channels.")
+  
   sample_width = spf.getsampwidth()
   audio_sample_rate = spf.getframerate()
   num_frames = spf.getnframes()
-  # Read in all frames.
-  signal = spf.readframes(spf.getnframes()-1)
   spf.close()
-
-  # Convert to numpy array.
-  signal = np.fromstring(signal, 'Int16')
+  
+  # Get the wave file data
+  signal = wavfile.read(wave_path)[1]
+  if channels == 2:
+    signal = signal.astype(float)
+    signal = signal.sum(axis=1) / 2.0
+      
+  signal = signal.astype(np.int16)
 
   if loop_times > 1:
     if verbose:
