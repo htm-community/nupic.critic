@@ -20,7 +20,7 @@ MODEL_PARAMS = \
                    'inferenceType': 'TemporalAnomaly',
                    'sensorParams': { 'encoders': { u'REPLACE_ME': { 'clipInput': True,
                                                             'fieldname': 'REPLACE_ME',
-                                                            'maxval': 6000.0,
+                                                            'maxval': 15000.0,
                                                             'minval': 0.0,
                                                             'n': 304,
                                                             'name': 'REPLACE_ME',
