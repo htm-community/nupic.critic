@@ -121,8 +121,6 @@ def read_wav_data(wave_path, loop_times):
   seconds = signal_length / audio_sample_rate
 
 
-  if channels > 1:
-    raise ValueError("Can't process stereo files.")
   if verbose:
     print "Sample width (bytes): %i" % sample_width
     print "Frame rate (sampling frequency): %i" % audio_sample_rate
