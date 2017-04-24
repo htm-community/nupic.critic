@@ -28,6 +28,7 @@ import wave
 import csv
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+from scipy.io import wavfile
 
 
 DEFAULT_BUCKETS = 10
@@ -84,18 +85,27 @@ parser.add_option(
 
 def read_wav_data(wave_path, loop_times):
   print "Opening %s" % wave_path
+  
+  # Get wave parameters
   spf = wave.open(wave_path, "r")
-
+  
   channels = spf.getnchannels()
+  
+  if channels > 2:
+    raise ValueError("Can't process files with more than two channels.")
+  
   sample_width = spf.getsampwidth()
   audio_sample_rate = spf.getframerate()
   num_frames = spf.getnframes()
-  # Read in all frames.
-  signal = spf.readframes(spf.getnframes()-1)
   spf.close()
-
-  # Convert to numpy array.
-  signal = np.fromstring(signal, 'Int16')
+  
+  # Get the wave file data
+  signal = wavfile.read(wave_path)[1]
+  if channels == 2:
+    signal = signal.astype(float)
+    signal = signal.sum(axis=1) / 2.0
+      
+  signal = signal.astype(np.int16)
 
   if loop_times > 1:
     if verbose:
@@ -111,8 +121,6 @@ def read_wav_data(wave_path, loop_times):
   seconds = signal_length / audio_sample_rate
 
 
-  if channels > 1:
-    raise ValueError("Can't process stereo files.")
   if verbose:
     print "Sample width (bytes): %i" % sample_width
     print "Frame rate (sampling frequency): %i" % audio_sample_rate
@@ -156,6 +164,7 @@ def get_fft_histogram(signal, audio_sample_rate, seconds, histograms_per_second,
   #   amplitude / density of each frequency) must be converted
   arr2D = 10 * np.log10(periodogram)
   arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
+  arr2D[arr2D < 0] = 0  # replace negatives with zeros
 
   if plot:
     fig = plt.figure(figsize=(6, 3.2))
@@ -178,14 +187,25 @@ def get_fft_histogram(signal, audio_sample_rate, seconds, histograms_per_second,
       print "Grouping FFT into %i-bucket histogram..." % buckets
 
     grouped = []
-    # Creates histograms for each sample. Groups the entire frequency range
-    #   into {buckets} number of buckets
+    # Each row of flipped is already effectively a histogram of the frequencies,
+    #    where each bucket is a single frequency
+    # Groups the entire frequency range
+    #   into {buckets} number of buckets of summed amplitudes 
+    #   of all the frequencies in the bucket
+    _,num_frequencies = flipped.shape
+    step = num_frequencies // buckets
     for i, sample in enumerate(flipped):
       perc_done = float(i+1) / len(flipped)
       elapsed_seconds = (perc_done * seconds)
-      histogram = np.array(np.histogram(
-        sample, bins=buckets)[0]
-      ).tolist()
+      histogram = []
+      left_freq = 0
+      for bin_num in range(buckets):
+        right_freq = min(left_freq + step, num_frequencies - 1)
+        # Sum the amplitudes of the frequencies in the range left_freq to right_freq
+        bin_value = int(sum(sample[left_freq:right_freq]))
+        histogram.append(bin_value)
+        left_freq = right_freq
+        
       histogram = [elapsed_seconds] + histogram
       grouped.append(histogram)
 

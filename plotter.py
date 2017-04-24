@@ -96,7 +96,7 @@ def run(input_dir, audio_file, maximize,
 
   if audio_file:
     subprocess.call("open %s" % audio_file, shell=True)
-    time.sleep(0.5)
+    time.sleep(1.0)
 
   start = time.time()
 
@@ -112,20 +112,21 @@ def run(input_dir, audio_file, maximize,
     bin_values = []
     anomaly_likelihoods = []
 
-    for i, line in enumerate(next_lines):
-      bin = bins[i]
-      header = headers[i]
-      bin_value = line[header.index(bin)]
-      if use_anomaly_score:
-        anomaly_key = "anomalyScore"
-      else:
-        anomaly_key = "anomalyLikelihood"
-      anomaly_likelihood = line[header.index(anomaly_key)]
-      bin_values.append(bin_value)
-      anomaly_likelihoods.append(anomaly_likelihood)
-
-    output.write(seconds, bin_values, anomaly_likelihoods)
-
+    if time.time() <= data_time:
+      for i, line in enumerate(next_lines):
+        bin = bins[i]
+        header = headers[i]
+        bin_value = line[header.index(bin)]
+        if use_anomaly_score:
+          anomaly_key = "anomalyScore"
+        else:
+          anomaly_key = "anomalyLikelihood"
+        anomaly_likelihood = line[header.index(anomaly_key)]
+        bin_values.append(bin_value)
+        anomaly_likelihoods.append(anomaly_likelihood)
+  
+      output.write(seconds, bin_values, anomaly_likelihoods)
+  
     # If syncing to an audio file, wait for it to catch up.
     if audio_file:
       while time.time() < data_time:
