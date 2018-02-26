@@ -114,14 +114,14 @@ def run(input_dir, audio_file, maximize,
 
     if time.time() <= data_time:
       for i, line in enumerate(next_lines):
-        bin = bins[i]
+        freq_bin = bins[i]
         header = headers[i]
-        bin_value = line[header.index(bin)]
+        bin_value = float(line[header.index(freq_bin)])
         if use_anomaly_score:
           anomaly_key = "anomalyScore"
         else:
           anomaly_key = "anomalyLikelihood"
-        anomaly_likelihood = line[header.index(anomaly_key)]
+        anomaly_likelihood = float(line[header.index(anomaly_key)])
         bin_values.append(bin_value)
         anomaly_likelihoods.append(anomaly_likelihood)
   
