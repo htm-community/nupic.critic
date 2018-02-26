@@ -55,7 +55,7 @@ class NuPICOutput(object):
 
 
   @abstractmethod
-  def write(row, result):
+  def write(self, row, result):
     pass
 
 

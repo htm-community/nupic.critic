@@ -117,20 +117,20 @@ class NuPICPlotOutput(object):
     print "initializing %s" % self.name
     anomalyRange = (-0.1, 1.1)
     self.seconds = deque([seconds] * WINDOW, maxlen=WINDOW)
-    for bin in self.bins:
-      self.bin_values[bin] = deque([0.0] * WINDOW, maxlen=WINDOW)
+    for freq_bin in self.bins:
+      self.bin_values[freq_bin] = deque([0.0] * WINDOW, maxlen=WINDOW)
 
-      self.anomaly_likelihoods[bin] = deque([0.0] * WINDOW, maxlen=WINDOW)
+      self.anomaly_likelihoods[freq_bin] = deque([0.0] * WINDOW, maxlen=WINDOW)
       bin_plot, = self._mainGraph.plot(
-        self.seconds, self.bin_values[bin]
+        self.seconds, self.bin_values[freq_bin]
       )
 
-      self.bin_lines[bin] = bin_plot
+      self.bin_lines[freq_bin] = bin_plot
       anomaly_plot, = self._anomalyGraph.plot(
-        self.seconds, self.anomaly_likelihoods[bin]
+        self.seconds, self.anomaly_likelihoods[freq_bin]
       )
       anomaly_plot.axes.set_ylim(anomalyRange)
-      self.anomaly_likelihood_lines[bin] = anomaly_plot
+      self.anomaly_likelihood_lines[freq_bin] = anomaly_plot
 
     self._mainGraph.legend(tuple(self.bins), loc=3)
     self._anomalyGraph.legend(
@@ -159,15 +159,15 @@ class NuPICPlotOutput(object):
 
     self.seconds.append(seconds)
 
-    for i, bin in enumerate(self.bins):
-      self.bin_values[bin].append(bin_values[i])
-      self.anomaly_likelihoods[bin].append(anomaly_likelihoods[i])
+    for i, freq_bin in enumerate(self.bins):
+      self.bin_values[freq_bin].append(bin_values[i])
+      self.anomaly_likelihoods[freq_bin].append(anomaly_likelihoods[i])
 
       # Update main chart data
-      self.bin_lines[bin].set_xdata(self.seconds)
-      self.bin_lines[bin].set_ydata(self.bin_values[bin])
-      self.anomaly_likelihood_lines[bin].set_xdata(self.seconds)
-      self.anomaly_likelihood_lines[bin].set_ydata(self.anomaly_likelihoods[bin])
+      self.bin_lines[freq_bin].set_xdata(self.seconds)
+      self.bin_lines[freq_bin].set_ydata(self.bin_values[freq_bin])
+      self.anomaly_likelihood_lines[freq_bin].set_xdata(self.seconds)
+      self.anomaly_likelihood_lines[freq_bin].set_ydata(self.anomaly_likelihoods[freq_bin])
 
     # Remove previous highlighted regions
     for poly in self._chart_highlights:
